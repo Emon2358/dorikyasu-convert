@@ -1,0 +1,91 @@
+name: Dreamcast Port CI
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      hdi_file:
+        description: 'HDIファイル名（リポジトリルート）'
+        required: true
+        default: 'PC98 雫.hdi'
+
+jobs:
+  extract-assets:
+    name: Extract PC-98 HDI Assets
+    runs-on: ubuntu-latest
+    env:
+      HDI_FILE: ${{ github.event.inputs.hdi_file }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-pip dosbox unzip
+          pip3 install mld
+
+      - name: Extract HDI assets from repository
+        run: |
+          echo "Extracting assets from $HDI_FILE"
+          mkdir -p assets/images assets/audio assets/scripts
+          mld -k -c "$HDI_FILE"/*.GEM -o assets/images
+          unzip -j "$HDI_FILE" "*.wav" -d assets/audio || true
+          python3 tools/extract_scripts.py "$HDI_FILE" > assets/scripts/story.txt
+
+      - name: Upload extracted assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: shizuku-assets
+          path: assets/
+
+  build-dreamcast:
+    name: Build Dreamcast VN
+    runs-on: ubuntu-latest
+    needs: extract-assets
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Download extracted assets
+        uses: actions/download-artifact@v3
+        with:
+          name: shizuku-assets
+          path: assets/
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git build-essential libsndfile1-dev libpng-dev
+
+      - name: Setup KallistiOS
+        run: |
+          git clone --depth 1 https://github.com/KallistiOS/KallistiOS.git kos
+          pushd kos
+          make -j$(nproc)
+          popd
+          echo "KOS_BASE=$PWD/kos" >> $GITHUB_ENV
+
+      - name: Setup ONScripter-DC
+        run: |
+          git clone --depth 1 https://github.com/KomatsuT/onscripter-dc.git onscripter-dc
+          mkdir -p onscripter-dc/data
+          cp -R assets/images/* onscripter-dc/data/
+          cp -R assets/audio/* onscripter-dc/data/
+          cp assets/scripts/story.txt onscripter-dc/data/
+
+      - name: Build for Dreamcast
+        env:
+          KOS_BASE: ${{ env.KOS_BASE }}
+        run: |
+          pushd onscripter-dc
+          make -f Makefile.dc dc
+          popd
+
+      - name: Upload Dreamcast CDI
+        uses: actions/upload-artifact@v3
+        with:
+          name: shizuku-dreamcast-cdi
+          path: onscripter-dc/bin/*.cdi
+
