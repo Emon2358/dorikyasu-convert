@@ -31,10 +31,10 @@ jobs:
 
       - name: Extract raw assets from HDI
         run: |
-          echo "Extracting assets from '$$HDI_FILE'"
+          echo "Extracting assets from '$HDI_FILE'"
           mkdir -p assets/raw_gem assets/audio assets/scripts
           # HDI内のファイルを7zで展開
-          7z x "$$HDI_FILE" -oassets/raw_gem "*.GEM" "*.WAV"
+          7z x "$HDI_FILE" -oassets/raw_gem '*.GEM' '*.WAV'
           # .wav を assets/audio に移動
           mv assets/raw_gem/*.WAV assets/audio/ || true
 
@@ -47,7 +47,7 @@ jobs:
       - name: Extract scripts
         run: |
           mkdir -p assets/scripts
-          python3 tools/extract_scripts.py "$$HDI_FILE" > assets/scripts/story.txt
+          python3 tools/extract_scripts.py "$HDI_FILE" > assets/scripts/story.txt
 
       - name: Upload extracted assets
         uses: actions/upload-artifact@v4
@@ -102,4 +102,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shizuku-dreamcast-cdi
-          path: onscripter-dc/bin/*.cdi
+          path: onscripter-dc/bin/*.cdi"}]}
