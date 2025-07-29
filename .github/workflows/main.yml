@@ -8,7 +8,7 @@ on:
       hdi_file:
         description: 'HDIファイル名（リポジトリルート）'
         required: true
-        default: 'PC98 雫.hdi'
+        default: '【PC98】雫.hdi'
 
 jobs:
   extract-assets:
@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       # workflow_dispatch時は入力値、push時はデフォルトを使用
-      HDI_FILE: ${{ github.event.inputs.hdi_file || 'PC98 雫.hdi' }}
+      HDI_FILE: ${{ github.event.inputs.hdi_file || '【PC98】雫.hdi' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -34,7 +34,7 @@ jobs:
           echo "Extracting assets from '$HDI_FILE'"
           mkdir -p assets/raw_gem assets/audio assets/scripts
           # HDI内のファイルを7zで展開
-          7z x "$HDI_FILE" -oassets/raw_gem '*.GEM' '*.WAV'
+          7z x "$HDI_FILE" -oassets/raw_gem "*.GEM" "*.WAV"
           # .wav を assets/audio に移動
           mv assets/raw_gem/*.WAV assets/audio/ || true
 
