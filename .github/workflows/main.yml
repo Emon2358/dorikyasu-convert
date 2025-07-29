@@ -17,8 +17,10 @@ jobs:
     env:
       HDI_FILE: ${{ github.event.inputs.hdi_file || '【PC98】雫.hdi' }}
     steps:
-      - name: Checkout repository
+      - name: Checkout repository (with submodules)
         uses: actions/checkout@v3
+        with:
+          submodules: recursive
 
       - name: Install dependencies
         run: |
@@ -26,22 +28,30 @@ jobs:
           sudo apt-get install -y \
             python3-pip python3-dev libpq-dev build-essential dosbox unzip \
             p7zip-full xorriso
-          pip3 install --upgrade pip setuptools wheel
-          pip3 install pg8000
+          pip3 install --upgrade pip setuptools wheel pg8000
 
       - name: Extract raw assets from HDI
         run: |
           echo "Extracting assets from '$HDI_FILE'"
           mkdir -p assets/raw_gem assets/audio assets/tmp
-          # xorriso を使ってHDIイメージを丸ごと展開（osirrox モード）:contentReference[oaicite:0]{index=0}
-          xorriso -osirrox on -indev "$HDI_FILE" -extract / assets/tmp
-          # GEM と WAV だけを assets/raw_gem/ と assets/audio/ に振り分け
-          find assets/tmp -type f -iname '*.GEM' -exec cp {} assets/raw_gem/ \;
-          find assets/tmp -type f -iname '*.WAV' -exec mv {} assets/audio/ \;
+
+          # 1) HDI をフラットイメージに変換（tools/hdi_to_flat.py が必要）
+          python3 tools/hdi_to_flat.py "$HDI_FILE" assets/tmp/flat.img
+
+          # 2) ループバックマウントして .GEM/.WAV を取り出す
+          sudo mkdir -p /mnt/pc98
+          sudo mount -o loop,ro assets/tmp/flat.img /mnt/pc98
+          find /mnt/pc98 -type f -iname '*.GEM' -exec cp {} assets/raw_gem/ \;
+          find /mnt/pc98 -type f -iname '*.WAV' -exec mv {} assets/audio/ \;
+          sudo umount /mnt/pc98
           rm -rf assets/tmp
 
       - name: Convert .GEM to PNG
         run: |
+          if [ ! -f tools/convert_gem.py ]; then
+            echo "Error: tools/convert_gem.py が見つかりません" >&2
+            exit 1
+          fi
           mkdir -p assets/images
           python3 tools/convert_gem.py assets/raw_gem assets/images
 
