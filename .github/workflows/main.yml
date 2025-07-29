@@ -41,12 +41,13 @@ jobs:
           # 2) HDI をフラットイメージに変換（出力先引数は無視される）
           cd tools/pc98-disk-tools
           python3 hdi_to_flat.py "$GITHUB_WORKSPACE/$HDI_FILE"
-          # 生成された <basename>.img を assets/tmp/flat.img にリネーム
-          HDI_BASENAME=$(basename "$HDI_FILE" .hdi)
-          mv "${HDI_BASENAME}.img" "$GITHUB_WORKSPACE/assets/tmp/flat.img"
           cd ../..
 
-          # 3) ループバックマウントして .GEM/.WAV を抽出
+          # 3) 生成された .img を assets/tmp/flat.img にリネーム
+          HDI_BASENAME=$(basename "$HDI_FILE" .hdi)
+          mv "$GITHUB_WORKSPACE/${HDI_BASENAME}.img" "$GITHUB_WORKSPACE/assets/tmp/flat.img"
+
+          # 4) ループバックマウントして .GEM/.WAV を抽出
           sudo mkdir -p /mnt/pc98
           sudo mount -o loop,ro assets/tmp/flat.img /mnt/pc98
           find /mnt/pc98 -type f -iname '*.GEM' -exec cp {} assets/raw_gem/ \;
