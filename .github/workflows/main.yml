@@ -27,9 +27,8 @@ jobs:
           pip3 install --upgrade pip setuptools wheel
           # psycopg2-binary の代わりに純Pythonドライバ pg8000 を使用
           pip3 install pg8000
-          # mldを依存関係を無視してインストール（psycopg2等を回避）
+          # mldを依存関係なしでインストールして psycopg2 などを回避
           pip3 install mld --no-deps
-          pip3 install mld
 
       - name: Extract HDI assets from repository
         run: |
