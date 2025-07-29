@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       hdi_file:
-        description: 'HDIファイル名（リポジトリルート）'
+        description: 'HDI ファイル名（リポジトリルート）'
         required: true
         default: '【PC98】雫.hdi'
 
@@ -35,10 +35,14 @@ jobs:
           echo "Extracting assets from '$HDI_FILE'"
           mkdir -p assets/raw_gem assets/audio assets/tmp
 
-          # 1) HDI をフラットイメージに変換（tools/hdi_to_flat.py が必要）
-          python3 tools/hdi_to_flat.py "$HDI_FILE" assets/tmp/flat.img
+          # PC-98 HDI をフラットイメージに変換
+          git clone --depth 1 https://github.com/barbeque/pc98-disk-tools.git tools/pc98-disk-tools
+          # カレントを移動して fdi モジュールを読み込める状態で実行
+          cd tools/pc98-disk-tools
+          python3 hdi_to_flat.py "$GITHUB_WORKSPACE/$HDI_FILE" "$GITHUB_WORKSPACE/assets/tmp/flat.img"
+          cd ../..
 
-          # 2) ループバックマウントして .GEM/.WAV を取り出す
+          # ループバックマウントして .GEM/.WAV を抽出
           sudo mkdir -p /mnt/pc98
           sudo mount -o loop,ro assets/tmp/flat.img /mnt/pc98
           find /mnt/pc98 -type f -iname '*.GEM' -exec cp {} assets/raw_gem/ \;
