@@ -15,7 +15,6 @@ jobs:
     name: Extract PC-98 HDI Assets
     runs-on: ubuntu-latest
     env:
-      # workflow_dispatch時は入力値、push時はデフォルトを使用
       HDI_FILE: ${{ github.event.inputs.hdi_file || '【PC98】雫.hdi' }}
     steps:
       - name: Checkout repository
@@ -24,23 +23,25 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y python3-pip python3-dev libpq-dev build-essential dosbox unzip p7zip-full
+          sudo apt-get install -y \
+            python3-pip python3-dev libpq-dev build-essential dosbox unzip \
+            p7zip-full xorriso
           pip3 install --upgrade pip setuptools wheel
-          # PostgreSQL ドライバの代替として pg8000 を使用
           pip3 install pg8000
 
       - name: Extract raw assets from HDI
         run: |
           echo "Extracting assets from '$HDI_FILE'"
-          mkdir -p assets/raw_gem assets/audio assets/scripts
-          # HDI内のファイルを7zで展開
-          7z x "$HDI_FILE" -oassets/raw_gem "*.GEM" "*.WAV"
-          # .wav を assets/audio に移動
-          mv assets/raw_gem/*.WAV assets/audio/ || true
+          mkdir -p assets/raw_gem assets/audio assets/tmp
+          # xorriso を使ってHDIイメージを丸ごと展開（osirrox モード）:contentReference[oaicite:0]{index=0}
+          xorriso -osirrox on -indev "$HDI_FILE" -extract / assets/tmp
+          # GEM と WAV だけを assets/raw_gem/ と assets/audio/ に振り分け
+          find assets/tmp -type f -iname '*.GEM' -exec cp {} assets/raw_gem/ \;
+          find assets/tmp -type f -iname '*.WAV' -exec mv {} assets/audio/ \;
+          rm -rf assets/tmp
 
       - name: Convert .GEM to PNG
         run: |
-          # tools/convert_gem.py が .GEM → .PNG に対応している前提
           mkdir -p assets/images
           python3 tools/convert_gem.py assets/raw_gem assets/images
 
@@ -102,4 +103,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: shizuku-dreamcast-cdi
-          path: onscripter-dc/bin/*.cdi"}]}
+          path: onscripter-dc/bin/*.cdi
