@@ -23,10 +23,10 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          # psycopg2-binary ビルドのために必要なライブラリを追加
           sudo apt-get install -y python3-pip python3-dev libpq-dev build-essential dosbox unzip
           pip3 install --upgrade pip setuptools wheel
-          pip3 install psycopg2-binary
+          # psycopg2-binary の代わりに純Pythonドライバ pg8000 を使用
+          pip3 install pg8000
           pip3 install mld
 
       - name: Extract HDI assets from repository
@@ -52,7 +52,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download extracted assets
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: shizuku-assets
           path: assets/
@@ -70,9 +70,9 @@ jobs:
           popd
           echo "KOS_BASE=$PWD/kos" >> $GITHUB_ENV
 
-      - name: Setup ONScripter-DC
+      - name: Setup ONScripter Dreamcast
         run: |
-          git clone --depth 1 https://github.com/KomatsuT/onscripter-dc.git onscripter-dc
+          git clone --depth 1 https://github.com/ogapee/onscripter.git onscripter-dc
           mkdir -p onscripter-dc/data
           cp -R assets/images/* onscripter-dc/data/
           cp -R assets/audio/* onscripter-dc/data/
@@ -91,3 +91,4 @@ jobs:
         with:
           name: shizuku-dreamcast-cdi
           path: onscripter-dc/bin/*.cdi
+
