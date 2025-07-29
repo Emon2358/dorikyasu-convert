@@ -47,13 +47,12 @@ jobs:
           HDI_BASENAME=$(basename "$HDI_FILE" .hdi)
           mv "$GITHUB_WORKSPACE/${HDI_BASENAME}.img" "$GITHUB_WORKSPACE/assets/tmp/flat.img"
 
-          # 4) ループバックマウントして .GEM/.WAV を抽出
-          sudo mkdir -p /mnt/pc98
-          sudo mount -o loop,ro assets/tmp/flat.img /mnt/pc98
-          find /mnt/pc98 -type f -iname '*.GEM' -exec cp {} assets/raw_gem/ \;
-          find /mnt/pc98 -type f -iname '*.WAV' -exec mv {} assets/audio/ \;
-          sudo umount /mnt/pc98
-          rm -rf assets/tmp
+          # 4) flat.img から .GEM/.WAV を抽出（7z を使用）
+          mkdir -p assets/tmp_extract
+          7z x assets/tmp/flat.img -oassets/tmp_extract "*.GEM" "*.WAV"
+          find assets/tmp_extract -type f -iname '*.GEM' -exec cp {} assets/raw_gem/ \;
+          find assets/tmp_extract -type f -iname '*.WAV' -exec mv {} assets/audio/ \;
+          rm -rf assets/tmp assets/tmp_extract
 
       - name: Convert .GEM to PNG
         run: |
