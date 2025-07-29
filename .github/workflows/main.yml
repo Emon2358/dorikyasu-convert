@@ -24,7 +24,7 @@ jobs:
         run: |
           sudo apt-get update
           # psycopg2-binary ビルドのために必要なライブラリを追加
-          sudo apt-get install -y python3-pip python3-dev libpq-dev dosbox unzip
+          sudo apt-get install -y python3-pip python3-dev libpq-dev build-essential dosbox unzip
           pip3 install mld
 
       - name: Extract HDI assets from repository
