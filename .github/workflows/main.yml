@@ -35,7 +35,7 @@ jobs:
           python3 tools/extract_scripts.py "$HDI_FILE" > assets/scripts/story.txt
 
       - name: Upload extracted assets
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: shizuku-assets
           path: assets/
@@ -84,8 +84,7 @@ jobs:
           popd
 
       - name: Upload Dreamcast CDI
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: shizuku-dreamcast-cdi
           path: onscripter-dc/bin/*.cdi
-
